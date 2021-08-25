@@ -30,23 +30,15 @@ func run(pass *analysis.Pass) (interface{}, error) {
 	}
 	intfs := make([]string, 0)
 	inspect.Preorder(nodeFilter, func(n ast.Node) {
-		//chnls := make(chan string, 10)
-			//make(chan string)
 		switch t := n.(type){
 		case *ast.InterfaceType:
 			//interfaces := t.Interface
 			//fmt.Printf("interfaces %+v\n",interfaces)
 		case *ast.StructType:
-			////filter self stims
+			//filter fields of struct type
 			for _, field := range t.Fields.List {
 				fmt.Println(field.Type, reflect.TypeOf(field.Type), reflect.ValueOf(field.Type).Interface())
-				//fmt.Println(field.Type.Pos(), field.Type.End())
 				fmt.Println(field.Names[0].Name)
-				//newType := field.Type.(*ast.Ident)
-				//fmt.Println(newType)
-				//if newType.Obj != nil{
-				//	fmt.Println(newType.Obj.Kind)
-				//}
 				switch field.Type.(type){
 				case *ast.Ident:
 					identName := field.Type.(*ast.Ident).Name
@@ -84,17 +76,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				}
 			}
 		}
-		//interfaces := n.(*ast.InterfaceType)
-		//fmt.Println(interfaces.Interface)
-
-		//function := n.(*ast.StructType)
-
-
-
-		//switch t := n.(type) {
-		//// find variable declarations
-
-
 		// operation here on functions
 	})
 	return nil, nil

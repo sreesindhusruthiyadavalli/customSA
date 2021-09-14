@@ -9,7 +9,10 @@ import (
 	"reflect"
 )
 
-const Doc = "Tool to check usage of interfaces during self stim"
+const (
+	Doc = "Tool to check usage of interfaces during self stim"
+	unusedIntDoc = "Check for unused interfaces"
+)
 
 
 // Analyzer runs static analysis.
@@ -43,13 +46,6 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				case *ast.Ident:
 					identName := field.Type.(*ast.Ident).Name
 					fmt.Printf("ident: %+v, identName %+v\n",field.Type, identName)
-					//chanLen := len(chnls)
-					////for i:=0;  chnls {
-					////	intfs = append(intfs, <-interf)
-					////}
-					//for i := 0; i < chanLen; i++ {
-					//	intfs = append(intfs, <-chnls)
-					//}
 					fmt.Printf("interfaces %+v\n", intfs)
 					for _, intf := range intfs{
 						if identName == intf {
@@ -69,15 +65,81 @@ func run(pass *analysis.Pass) (interface{}, error) {
 				case *ast.InterfaceType:
 					fmt.Printf("InterfaceType:%+v\n", t.Name.Name)
 					intfs = append(intfs, t.Name.Name)
-					//ch := make(chan string)
-					//chnls <- t.Name.Name
-					//chnls = append(chnls, ch)
-					//fmt.Printf("hereintfsL%+v\n", intfs)
 				}
 			}
 		}
-		// operation here on functions
 	})
 	return nil, nil
 }
 
+var UnusedInterfaceAnalyzer = &analysis.Analyzer{
+	Name: "checkUnusedAnalyzer",
+	Doc: unusedIntDoc,
+	Requires: []*analysis.Analyzer{inspect.Analyzer},
+	Run: customrun,
+}
+
+func customrun(pass *analysis.Pass) (interface{}, error) {
+	inspect := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)
+
+	nodeFilter := []ast.Node{
+		(*ast.InterfaceType)(nil),
+		(*ast.TypeSpec)(nil),
+		(*ast.StructType)(nil),
+	}
+	intfs := make([]string, 0)
+	intfMaps := make(map[string]int)
+	inspect.Preorder(nodeFilter, func(n ast.Node) {
+		switch t := n.(type){
+		case *ast.InterfaceType:
+			//interfaces := t.Interface
+			//fmt.Printf("interfaces %+v\n",interfaces)
+		case *ast.TypeSpec:
+			// which are public
+			fmt.Printf("typespec %+v\n",t.Name)
+			if t.Name.IsExported() {
+				switch t.Type.(type) {
+				// and are interfaces
+				case *ast.InterfaceType:
+					fmt.Printf("InterfaceType:%+v\n", t.Name.Name)
+					intfs = append(intfs, t.Name.Name)
+					intfMaps[t.Name.Name] = 1
+				}
+			}
+		case *ast.StructType:
+			for _, field := range t.Fields.List {
+				fmt.Println(field.Type, reflect.TypeOf(field.Type), reflect.ValueOf(field.Type).Interface())
+				fmt.Println(field.Names[0].Name)
+				switch field.Type.(type){
+				case *ast.Ident:
+					identName := field.Type.(*ast.Ident).Name
+					fmt.Printf("ident: %+v, identName %+v\n",field.Type, identName)
+					//Remove interfaces which are used
+					fmt.Printf("intfMaps %+v\n", intfMaps)
+					for k := range intfMaps{
+						if identName == k{
+							fmt.Printf("used interface %+v\n",k)
+							delete(intfMaps, k)
+							fmt.Printf("intfMaps  after delete %+v\n", intfMaps)
+						}
+					}
+				case *ast.InterfaceType:
+					fmt.Printf("Inttype:%+v\n",field.Type)
+				}
+			}
+		}
+	})
+
+	nodeFilter2 := []ast.Node{
+		(*ast.StructType)(nil),
+	}
+	inspect.Preorder(nodeFilter2, func(n ast.Node) {
+		switch t := n.(type){
+		case *ast.StructType:
+			for x := range intfMaps {
+				pass.Reportf(t.Pos(), "unused Interface %s", x)
+			}
+		}
+	})
+	return nil, nil
+}

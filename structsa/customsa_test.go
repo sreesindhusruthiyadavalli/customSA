@@ -7,4 +7,5 @@ import (
 
 func TestCtxArg(t *testing.T) {
 	analysistest.Run(t, analysistest.TestData(), Analyzer)
+	analysistest.Run(t, analysistest.TestData(), UnusedInterfaceAnalyzer)
 }

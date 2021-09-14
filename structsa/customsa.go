@@ -130,10 +130,10 @@ func customrun(pass *analysis.Pass) (interface{}, error) {
 		}
 	})
 
-	nodeFilter2 := []ast.Node{
-		(*ast.StructType)(nil),
-	}
-	inspect.Preorder(nodeFilter2, func(n ast.Node) {
+	//nodeFilter2 := []ast.Node{
+	//	(*ast.StructType)(nil),
+	//}
+	inspect.Preorder(nil, func(n ast.Node) {
 		switch t := n.(type){
 		case *ast.StructType:
 			for x := range intfMaps {

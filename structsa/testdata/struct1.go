@@ -1,6 +1,6 @@
 package testdata
 
-type Device interface{
+type Animal interface{
 
 }
 
@@ -10,5 +10,5 @@ type Abstract interface{
 
 type Test struct {
 	err        error
-	abc 	   Device
+	abc 	   Animal
 }
